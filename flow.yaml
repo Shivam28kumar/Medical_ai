@@ -1,0 +1,99 @@
+version: "0.1.1"
+
+metadata:
+  flow_type: "compound"
+  name: "medical-assistance-ai-flow"
+  description: "A flow to assist users with medical advice, treatments, and nearby doctor recommendations."
+  author: "shivam"
+  tags: ["medical", "healthcare", "AI", "treatment"]
+  private: false
+
+inputs:
+  symptoms:
+    type: string
+    description: "User-provided symptoms or medical condition."
+    required: true
+    example: "Fever, headache, nausea"
+  location:
+    type: string
+    description: "User's location for finding nearby doctors."
+    required: true
+    example: "New York, NY"
+
+workflow:
+  analyze_symptoms:
+    type: "custom"
+    inputs:
+      symptoms_input: "${inputs.symptoms}"
+    model:
+      provider: "openai"
+      name: "gpt-4o"
+    prompt: |
+      You are a medical assistance AI that helps users understand their symptoms.
+      Analyze the following symptoms: {symptoms_input}.
+      
+      - Provide a list of possible conditions or diseases.
+      - Suggest treatments or medicines (over-the-counter or prescription) with explanations.
+      - Include home remedies if applicable.
+
+  find_nearby_doctors:
+    type: "custom"
+    depends_on:
+      - "analyze_symptoms"
+    inputs:
+      location_input: "${inputs.location}"
+      symptoms_analysis: "${analyze_symptoms.output}"
+    model:
+      provider: "openai"
+      name: "gpt-4o"
+    prompt: |
+      Based on the location: {location_input} and symptoms analysis: {symptoms_analysis}, 
+      provide a list of nearby doctors and medical facilities.
+      Include:
+      - Name of the doctor/facility
+      - Specialty
+      - Address or location
+      - Contact details (phone/email)
+      - Ratings or reviews (if available)
+
+  provide_health_advice:
+    type: "custom"
+    depends_on:
+      - "analyze_symptoms"
+    inputs:
+      symptoms_analysis: "${analyze_symptoms.output}"
+    model:
+      provider: "openai"
+      name: "gpt-4o"
+    prompt: |
+      Based on the symptoms analysis: {symptoms_analysis}, 
+      provide important health advice or warnings.
+      Ensure that this advice is actionable and helps the user address their symptoms effectively.
+
+output:
+  value:
+    - "${analyze_symptoms.output}"
+    - "${find_nearby_doctors.output}"
+    - "${provide_health_advice.output}"
+
+readme: |
+  # Medical Assistance AI Flow
+
+  This is a medical assistance AI flow that:
+  1. Analyzes symptoms to suggest conditions and treatments
+  2. Recommends nearby doctors and medical facilities based on location
+  3. Provides actionable health advice
+
+  ## Inputs:
+  - **Symptoms**: User-provided symptoms or medical condition
+  - **Location**: User's location to find nearby doctors
+
+  ## Outputs:
+  - Symptoms Analysis: Suggested conditions and treatments
+  - Nearby Doctors: List of medical professionals and facilities
+  - Health Advice: Important tips and warnings
+
+  ## Workflow Overview:
+  1. Analyze Symptoms: Uses input symptoms to generate an analysis
+  2. Find Nearby Doctors: Suggests nearby healthcare options based on the user's location
+  3. Provide Health Advice: Offers tailored advice to improve the user's health
